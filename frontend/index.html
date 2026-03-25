@@ -8,7 +8,12 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="premium-theme">
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
     <div id="login-overlay" class="login-overlay">
         <div class="login-card">
             <div class="welcome-icon"><i class="fas fa-bolt" style="color:#3b82f6;"></i></div>
@@ -86,9 +91,32 @@
             <div id="view-chat" class="app-view active">
                 <div id="messages-container">
                     <div class="welcome-screen">
-                        <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+                        <div class="welcome-icon"><i class="fas fa-bolt"></i></div>
                         <h1 data-i18n="welcomeHow">How can I help you today?</h1>
-                        <p data-i18n="welcomeDesc">Experience the power of Pradeep AI.</p>
+                        <p data-i18n="welcomeDesc">Experience the next generation of AI assistance.</p>
+                        
+                        <div class="suggestions-grid">
+                            <div class="suggestion-card" data-prompt="Summarize a long article or document for me.">
+                                <i class="fas fa-file-alt"></i>
+                                <h3>Summarize text</h3>
+                                <p>Get the key points from any text</p>
+                            </div>
+                            <div class="suggestion-card" data-prompt="Help me write a professional email to my boss about a promotion.">
+                                <i class="fas fa-pen-nib"></i>
+                                <h3>Help me write</h3>
+                                <p>Draft emails, essays, or stories</p>
+                            </div>
+                            <div class="suggestion-card" data-prompt="Explain quantum physics like I'm five years old.">
+                                <i class="fas fa-lightbulb"></i>
+                                <h3>Explain concepts</h3>
+                                <p>Simple answers to complex questions</p>
+                            </div>
+                            <div class="suggestion-card" data-prompt="Generate a beautiful image of a cyberpunk city at night.">
+                                <i class="fas fa-magic"></i>
+                                <h3>Imagine images</h3>
+                                <p>Turn your ideas into visuals</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="input-area">

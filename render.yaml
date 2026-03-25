@@ -1,0 +1,23 @@
+services:
+  # Backend - Node.js API
+  - type: web
+    name: pradeep-ai-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false   # You'll paste this in the Render dashboard
+      - key: PORT
+        value: 3001
+    plan: free
+
+  # Frontend - Static Site
+  - type: web
+    name: pradeep-ai-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: echo "No build step needed"
+    staticPublishPath: .
+    plan: free

@@ -18,7 +18,18 @@ const settingsDropdown = document.getElementById('settings-dropdown');
 let chatHistory = [];
 let isAutoSpeak = false;
 const autoSpeakBtn = document.getElementById('auto-speak-btn');
-const API_URL = 'http://localhost:3000/api/chat';
+// ============================================================
+// 🚀 DEPLOYMENT CONFIG
+// For production: replace the BACKEND_URL with your Railway or
+// Render backend URL, e.g.:
+//   const BACKEND_URL = 'https://pradeep-ai.up.railway.app';
+// For local dev: leave as-is (localhost:3001)
+// ============================================================
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001'
+    : 'https://YOUR-BACKEND-URL.up.railway.app'; // <-- Replace with your deployed backend URL
+
+const API_URL = `${BACKEND_URL}/api/chat`;
 
 // Translations
 const translations = {
@@ -28,7 +39,7 @@ const translations = {
         "currentConvo": "Current Conversation",
         "logout": "Logout",
         "welcomeHow": "How can I help you today?",
-        "welcomeDesc": "Experience the power of Pradeep AI.",
+        "welcomeDesc": "Experience the next generation of AI assistance.",
         "footer": "Pradeep AI can make mistakes. Consider verifying important information.",
         "about": "About",
         "aiModel": "AI Model",
@@ -327,11 +338,45 @@ newChatBtn.addEventListener('click', () => {
     chatHistory = [];
     messagesContainer.innerHTML = `
         <div class="welcome-screen">
-            <div class="welcome-icon"><i class="fas fa-robot"></i></div>
-            <h1>How can I help you today?</h1>
-            <p>Experience the power of Pradeep AI.</p>
+            <div class="welcome-icon"><i class="fas fa-bolt"></i></div>
+            <h1 data-i18n="welcomeHow">How can I help you today?</h1>
+            <p data-i18n="welcomeDesc">Experience the next generation of AI assistance.</p>
+            <div class="suggestions-grid">
+                <div class="suggestion-card" data-prompt="Summarize a long article or document for me.">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>Summarize text</h3>
+                    <p>Get the key points from any text</p>
+                </div>
+                <div class="suggestion-card" data-prompt="Help me write a professional email to my boss about a promotion.">
+                    <i class="fas fa-pen-nib"></i>
+                    <h3>Help me write</h3>
+                    <p>Draft emails, essays, or stories</p>
+                </div>
+                <div class="suggestion-card" data-prompt="Explain quantum physics like I'm five years old.">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Explain concepts</h3>
+                    <p>Simple answers to complex questions</p>
+                </div>
+                <div class="suggestion-card" data-prompt="Generate a beautiful image of a cyberpunk city at night.">
+                    <i class="fas fa-magic"></i>
+                    <h3>Imagine images</h3>
+                    <p>Turn your ideas into visuals</p>
+                </div>
+            </div>
         </div>
     `;
+    updateUIForLanguage(languageSelect ? languageSelect.value : "English");
+});
+
+messagesContainer.addEventListener('click', (e) => {
+    const card = e.target.closest('.suggestion-card');
+    if (card) {
+        const prompt = card.getAttribute('data-prompt');
+        messageInput.value = prompt;
+        messageInput.style.height = 'auto';
+        messageInput.style.height = (messageInput.scrollHeight) + 'px';
+        sendMessage();
+    }
 });
 
 async function sendMessage() {
@@ -559,7 +604,7 @@ async function generateImage() {
     `;
 
     try {
-        const response = await fetch('http://localhost:3000/api/generate-image', {
+        const response = await fetch(`${BACKEND_URL}/api/generate-image`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -579,7 +624,7 @@ async function generateImage() {
         }
     } catch (error) {
         console.error('Error generating image (network error?):', error);
-        imageResultContainer.innerHTML = `<p style="color: #ef4444; padding: 20px;">Error: Unable to connect to the server. Make sure the backend is running at http://localhost:3000.</p>`;
+        imageResultContainer.innerHTML = `<p style="color: #ef4444; padding: 20px;">Error: Unable to connect to the AI server. Please try again.</p>`;
     } finally {
         generateImageBtn.disabled = false;
         generateImageBtn.innerHTML = '<i class="fas fa-magic"></i> Generate';
@@ -614,7 +659,7 @@ async function checkSystemStatus() {
     if (!statusDot || !statusText) return;
 
     try {
-        const response = await fetch('http://localhost:3000/api/ping');
+        const response = await fetch(`${BACKEND_URL}/api/ping`);
         if (response.ok) {
             statusDot.style.background = '#10b981';
             statusText.innerText = 'System: Online';
@@ -633,7 +678,7 @@ async function checkSystemStatus() {
 
 async function handleWeatherQuery(city) {
     try {
-        const response = await fetch('http://localhost:3000/api/weather', {
+        const response = await fetch(`${BACKEND_URL}/api/weather`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ city })
