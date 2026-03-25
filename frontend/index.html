@@ -34,6 +34,7 @@
                     <li class="nav-item" data-target="view-research"><i class="fas fa-microscope"></i> <span>Deep Research</span></li>
                     <li class="nav-item" data-target="view-codex"><i class="fas fa-code"></i> <span>Codex</span></li>
                     <li class="nav-item" data-target="view-projects"><i class="fas fa-project-diagram"></i> <span>Projects</span></li>
+                    <li class="nav-item" data-target="view-about"><i class="fas fa-info-circle"></i> <span data-i18n="about">About</span></li>
                 </ul>
             </div>
             <div class="chat-history-list">
@@ -43,8 +44,8 @@
                     <li class="history-item active"><i class="far fa-comment-alt"></i> <span data-i18n="currentConvo">Current Conversation</span></li>
                 </ul>
             </div>
-            <div class="sidebar-footer">
-                <!-- Footer area kept clear -->
+            <div class="sidebar-footer" style="padding: 15px; border-top: 1px solid var(--border-color);">
+                <button class="nav-item" id="clear-chat-btn" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);"><i class="fas fa-trash-alt"></i> <span data-i18n="clearChat">Clear Chat</span></button>
             </div>
         </nav>
         <main id="main-content">
@@ -53,8 +54,13 @@
                     <button id="mobile-menu-btn"><i class="fas fa-bars"></i></button>
                 </div>
                 <div class="header-right" style="position: relative;">
+                    <button id="auto-speak-btn" title="Toggle Auto-Speak" style="background:none; border:none; font-size:1.3rem; color:var(--text-secondary); cursor:pointer; margin-right: 15px;"><i class="fas fa-volume-mute"></i></button>
                     <button id="settings-menu-btn" style="background:none; border:none; font-size:1.5rem; color:var(--text-secondary); cursor:pointer;"><i class="fas fa-bars"></i></button>
                     <div id="settings-dropdown" class="dropdown-menu hidden">
+                        <div class="user-profile" style="border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                            <div id="system-status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #94a3b8;"></div>
+                            <span id="system-status-text" style="font-size: 0.85rem; color: var(--text-secondary);">System: Checking...</span>
+                        </div>
                         <div class="user-profile">
                             <div class="avatar" id="sidebar-avatar"><i class="fas fa-user"></i></div>
                             <span id="sidebar-user-name">User</span>
@@ -65,6 +71,12 @@
                             <option value="Tamil">தமிழ் (Tamil)</option>
                             <option value="French">Français</option>
                             <option value="German">Deutsch</option>
+                        </select>
+                        <select id="model-select" class="model-selector" style="margin-top: 5px;">
+                            <option value="openai" selected>ChatGPT (GPT-4o)</option>
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="claude">Claude 3.5 Sonnet</option>
+                            <option value="mistral">Mistral AI</option>
                         </select>
                         <button id="logout-btn" data-i18n="logout">Logout</button>
                     </div>
@@ -93,10 +105,19 @@
             </div>
 
             <div id="view-images" class="app-view hidden">
-                <div class="placeholder-screen">
+                <div class="image-studio-container">
                     <div class="welcome-icon"><i class="far fa-image"></i></div>
                     <h1>Image Studio</h1>
-                    <p>Coming Soon. Generate beautiful visuals here.</p>
+                    <p>Enter a description to generate a beautiful AI image.</p>
+                    
+                    <div class="image-input-wrapper">
+                        <input type="text" id="image-prompt" placeholder="Describe the image you want to create...">
+                        <button id="generate-image-btn"><i class="fas fa-magic"></i> Generate</button>
+                    </div>
+
+                    <div id="image-result-container" class="image-result-container">
+                        <!-- Generated image will appear here -->
+                    </div>
                 </div>
             </div>
             <div id="view-apps" class="app-view hidden">
@@ -125,6 +146,24 @@
                     <div class="welcome-icon"><i class="fas fa-project-diagram"></i></div>
                     <h1>Projects</h1>
                     <p>Coming Soon. Manage all your automated workflows.</p>
+                </div>
+            </div>
+            <div id="view-about" class="app-view hidden">
+                <div class="image-studio-container" style="justify-content: flex-start; text-align: left; align-items: flex-start;">
+                    <h1 data-i18n="aboutTitle">About Pradeep AI</h1>
+                    <p data-i18n="aboutDesc" style="margin-bottom: 25px;">Pradeep AI is a premium, multi-talented AI assistant designed for seamless communication and creativity.</p>
+                    
+                    <h3 data-i18n="featuresTitle" style="margin-bottom: 15px; color: var(--text-primary);">Core Features:</h3>
+                    <ul class="about-features-list" style="list-style: none; display: flex; flex-direction: column; gap: 15px;">
+                        <li><i class="fas fa-microphone" style="color: #3b82f6;"></i> <strong data-i18n="featureVoice">Voice Chat AI:</strong> Talk to the bot in multiple languages including Tamil. Use "Auto-Speak" for a hands-free experience.</li>
+                        <li><i class="fas fa-magic" style="color: #8b5cf6;"></i> <strong data-i18n="featureImage">Instant Image Generation:</strong> Ask the bot to "generate an image" directly in chat or use the Image Studio for high-quality visuals.</li>
+                        <li><i class="fas fa-language" style="color: #f43f5e;"></i> <strong data-i18n="featureMultilang">Multi-language Support:</strong> Fully localized UI and AI processing for Tamil, Spanish, French, and German.</li>
+                        <li><i class="fas fa-lock" style="color: #10b981;"></i> <strong data-i18n="featureSecure">Private & Secure:</strong> Local authentication system to keep your conversations private.</li>
+                    </ul>
+
+                    <div style="margin-top: 40px; padding: 20px; background: rgba(59, 130, 246, 0.05); border-radius: 12px; border: 1px solid var(--border-color); width: 100%;">
+                        <p data-i18n="builtWith"><strong>Built With:</strong> Node.js, Express, Gemini API, and Pollinations AI.</p>
+                    </div>
                 </div>
             </div>
         </main>

@@ -9,12 +9,15 @@ const passwordInput = document.getElementById('password-input');
 const loginBtn = document.getElementById('login-btn');
 const authError = document.getElementById('auth-error');
 const languageSelect = document.getElementById('language-select');
+const modelSelect = document.getElementById('model-select');
 const logoutBtn = document.getElementById('logout-btn');
 const micBtn = document.getElementById('mic-btn');
 const settingsMenuBtn = document.getElementById('settings-menu-btn');
 const settingsDropdown = document.getElementById('settings-dropdown');
 
 let chatHistory = [];
+let isAutoSpeak = false;
+const autoSpeakBtn = document.getElementById('auto-speak-btn');
 const API_URL = 'http://localhost:3000/api/chat';
 
 // Translations
@@ -26,7 +29,18 @@ const translations = {
         "logout": "Logout",
         "welcomeHow": "How can I help you today?",
         "welcomeDesc": "Experience the power of Pradeep AI.",
-        "footer": "Pradeep AI can make mistakes. Consider verifying important information."
+        "footer": "Pradeep AI can make mistakes. Consider verifying important information.",
+        "about": "About",
+        "aiModel": "AI Model",
+        "aboutTitle": "About Pradeep AI",
+        "aboutDesc": "Pradeep AI is a premium, multi-talented AI assistant designed for seamless communication and creativity.",
+        "featuresTitle": "Core Features:",
+        "featureVoice": "Voice Chat AI:",
+        "featureImage": "Instant Image Generation:",
+        "featureMultilang": "Multi-language Support:",
+        "featureSecure": "Private & Secure:",
+        "builtWith": "Built With: Node.js, Express, Gemini API, and Pollinations AI.",
+        "clearChat": "Clear Chat"
     },
     "Spanish": {
         "newChat": "<i class=\"fas fa-plus\"></i> Nuevo Chat",
@@ -44,7 +58,18 @@ const translations = {
         "logout": "வெளியேறு",
         "welcomeHow": "இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
         "welcomeDesc": "பிரதீப் AI இன் சக்தியை அனுபவிக்கவும்.",
-        "footer": "பிரதீப் AI தவறுகளைச் செய்யலாம். முக்கியமான தகவல்களைச் சரிபார்க்கவும்."
+        "footer": "பிரதீப் AI தவறுகளைச் செய்யலாம். முக்கியமான தகவல்களைச் சரிபார்க்கவும்.",
+        "about": "பற்றி",
+        "aiModel": "AI மாதிரி",
+        "aboutTitle": "பிரதீப் AI பற்றி",
+        "aboutDesc": "பிரதீப் AI என்பது தடையற்ற தொடர்பு மற்றும் படைப்பாற்றலுக்காக வடிவமைக்கப்பட்ட ஒரு பிரீமியம் AI உதவியாளர்.",
+        "featuresTitle": "முக்கிய அம்சங்கள்:",
+        "featureVoice": "குரல் அரட்டை AI:",
+        "featureImage": "உடனடி பட உருவாக்கம்:",
+        "featureMultilang": "பல மொழி ஆதரவு:",
+        "featureSecure": "தனிப்பட்ட மற்றும் பாதுகாப்பானது:",
+        "builtWith": "உருவாக்கப்பட்டது: Node.js, Express, Gemini API மற்றும் Pollinations AI.",
+        "clearChat": "அரட்டையை அழி"
     },
     "French": {
         "newChat": "<i class=\"fas fa-plus\"></i> Nouvelle disc.",
@@ -145,6 +170,22 @@ logoutBtn.addEventListener('click', () => {
 
 checkAuth();
 updateUIForLanguage(languageSelect ? languageSelect.value : "English");
+checkSystemStatus();
+setInterval(checkSystemStatus, 30000); // Check every 30 seconds
+
+if (autoSpeakBtn) {
+    autoSpeakBtn.addEventListener('click', () => {
+        isAutoSpeak = !isAutoSpeak;
+        if (isAutoSpeak) {
+            autoSpeakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            autoSpeakBtn.style.color = '#3b82f6';
+        } else {
+            autoSpeakBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            autoSpeakBtn.style.color = 'var(--text-secondary)';
+            window.speechSynthesis.cancel();
+        }
+    });
+}
 
 // Voice Chat Logic (STT & TTS)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -195,6 +236,14 @@ micBtn.addEventListener('click', () => {
     }
 });
 
+function detectLanguage(text) {
+    if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN';
+    if (/[áéíóúüñÁÉÍÓÚÜÑ]/.test(text)) return 'es-ES'; // Hint for Spanish
+    if (/[àâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/.test(text)) return 'fr-FR'; // Hint for French
+    if (/[äöüßÄÖÜ]/.test(text)) return 'de-DE'; // Hint for German
+    return 'en-US';
+}
+
 function speakText(text) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -206,15 +255,9 @@ function speakText(text) {
         
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
-        let langMap = {
-            'English': 'en-US',
-            'Spanish': 'es-ES',
-            'Tamil': 'ta-IN',
-            'French': 'fr-FR',
-            'German': 'de-DE'
-        };
-        const selectedLang = languageSelect ? languageSelect.value : 'English';
-        utterance.lang = langMap[selectedLang] || 'en-US';
+        // Auto-detect language for clarity
+        const detectedLang = detectLanguage(cleanText);
+        utterance.lang = detectedLang;
         
         window.speechSynthesis.speak(utterance);
     }
@@ -314,6 +357,13 @@ async function sendMessage() {
 
     try {
         // Send request to backend
+        // Weather Detection
+        const weatherMatch = text.match(/weather in ([\w\s,]+)/i) || text.match(/([\w\s,]+) weather/i);
+        if (weatherMatch) {
+            const city = weatherMatch[1].trim();
+            handleWeatherQuery(city);
+        }
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -322,7 +372,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 message: text,
                 history: chatHistory,
-                language: languageSelect ? languageSelect.value : 'English'
+                language: languageSelect ? languageSelect.value : 'English',
+                model: modelSelect ? modelSelect.value : 'gemini'
             })
         });
 
@@ -338,6 +389,8 @@ async function sendMessage() {
             
             // Render Bot response with markdown
             appendMessage(data.response, 'bot', true);
+        } else if (response.status === 429) {
+            appendMessage("Rate limit reached for the current AI (Gemini). **Tip:** Go to Settings and switch the 'AI Model' to **ChatGPT** or **Claude** to continue chatting instantly!", 'bot');
         } else {
             appendMessage(`Error: ${data.error || 'Failed to connect to AI server'}`, 'bot');
         }
@@ -390,6 +443,11 @@ function appendMessage(content, sender, isMarkdown = false) {
 
     messagesContainer.appendChild(row);
     scrollToBottom();
+
+    // Auto-speak if enabled
+    if (sender === 'bot' && isAutoSpeak) {
+        speakText(content);
+    }
 }
 
 function copyToClipboard(button) {
@@ -467,3 +525,154 @@ if(menuBtn) {
         sidebar.classList.toggle('open');
     });
 }
+
+// Image Generation Logic
+const imagePromptInput = document.getElementById('image-prompt');
+const generateImageBtn = document.getElementById('generate-image-btn');
+const imageResultContainer = document.getElementById('image-result-container');
+
+if (generateImageBtn) {
+    generateImageBtn.addEventListener('click', generateImage);
+}
+
+if (imagePromptInput) {
+    imagePromptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            generateImage();
+        }
+    });
+}
+
+async function generateImage() {
+    const prompt = imagePromptInput.value.trim();
+    if (!prompt) return;
+
+    console.log('Generating image for:', prompt);
+    // Show loading state
+    generateImageBtn.disabled = true;
+    generateImageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    imageResultContainer.innerHTML = `
+        <div class="image-loading">
+            <div class="image-loader"></div>
+            <p>Creating your masterpiece...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('http://localhost:3000/api/generate-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt })
+        });
+
+        console.log('Image API response status:', response.status);
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('Image URL received:', data.imageUrl);
+            imageResultContainer.innerHTML = `<img src="${data.imageUrl}" alt="${prompt}" onload="this.parentElement.style.border='none'">`;
+        } else {
+            console.error('Image API error:', data.error);
+            imageResultContainer.innerHTML = `<p style="color: #ef4444; padding: 20px;">Error: ${data.error || 'Failed to generate image'}</p>`;
+        }
+    } catch (error) {
+        console.error('Error generating image (network error?):', error);
+        imageResultContainer.innerHTML = `<p style="color: #ef4444; padding: 20px;">Error: Unable to connect to the server. Make sure the backend is running at http://localhost:3000.</p>`;
+    } finally {
+        generateImageBtn.disabled = false;
+        generateImageBtn.innerHTML = '<i class="fas fa-magic"></i> Generate';
+    }
+}
+
+const clearChatBtn = document.getElementById('clear-chat-btn');
+if (clearChatBtn) {
+    clearChatBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear the chat history?")) {
+            chatHistory = [];
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                messagesContainer.innerHTML = `
+                    <div class="welcome-screen">
+                        <div class="welcome-logo">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h1 data-i18n="welcomeHow">How can I help you today?</h1>
+                        <p data-i18n="welcomeDesc">Experience the power of Pradeep AI.</p>
+                    </div>
+                `;
+            }
+            updateUIForLanguage(languageSelect ? languageSelect.value : "English");
+        }
+    });
+}
+
+async function checkSystemStatus() {
+    const statusDot = document.getElementById('system-status-dot');
+    const statusText = document.getElementById('system-status-text');
+    if (!statusDot || !statusText) return;
+
+    try {
+        const response = await fetch('http://localhost:3000/api/ping');
+        if (response.ok) {
+            statusDot.style.background = '#10b981';
+            statusText.innerText = 'System: Online';
+            statusText.style.color = '#10b981';
+        } else {
+            statusDot.style.background = '#f59e0b';
+            statusText.innerText = 'System: Error';
+            statusText.style.color = '#f59e0b';
+        }
+    } catch (error) {
+        statusDot.style.background = '#ef4444';
+        statusText.innerText = 'System: Offline';
+        statusText.style.color = '#ef4444';
+    }
+}
+
+async function handleWeatherQuery(city) {
+    try {
+        const response = await fetch('http://localhost:3000/api/weather', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            appendWeatherCard(data);
+        }
+    } catch (error) {
+        console.error('Weather error:', error);
+    }
+}
+
+function appendWeatherCard(data) {
+    const card = document.createElement('div');
+    card.className = 'weather-card';
+    card.innerHTML = `
+        <div class="weather-header">
+            <div class="weather-info">
+                <span class="weather-city">${data.city}</span>
+                <span class="weather-desc">${data.description}</span>
+            </div>
+            <i class="fas ${data.isDay ? 'fa-sun' : 'fa-moon'}" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="weather-temp">${Math.round(data.temp)}°C</div>
+        <div class="weather-details">
+            <span><i class="fas fa-droplet"></i> ${data.humidity}%</span>
+            <span><i class="fas fa-wind"></i> ${data.wind} km/h</span>
+            <span>Feels: ${Math.round(data.feelsLike)}°</span>
+        </div>
+    `;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot';
+    messageDiv.appendChild(card);
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+checkSystemStatus();
+setInterval(checkSystemStatus, 30000);
+
